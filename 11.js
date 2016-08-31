@@ -2,32 +2,33 @@
 
 'use strict';
 
-//////////////////////////// EXECUTE with "./11.js" ////////////////////////////
-////// ran "chmod +x 11.js" from TERMINAL to allow execution capabilities //////
 ///////////////////////  npm install request (for "GET") ///////////////////////
-///////////////////////  npm install cheerio (for "LOAD") //////////////////////
+////// ran "chmod +x 11.js" from TERMINAL to allow execution capabilities //////
+///////////////////// EXECUTE with "./11.js (stock symbol)" /////////////////////
 
-const { createServer } = require('http')
-const { get } = require('request')
-const { load } = require('cheerio')
+const { get } = require('request')                                    // request library to get API
 
-const server = createServer()
+const [, , symbol] = process.argv                                     // argument passed in TERMINAL 
+// const [,,...symbol] = process.argv                                 // returns symbol as an object not a string
 
-server.on('request', (req, res) => {
-  get('https://reddit.com', (err, _, body) => {
 
-    const $ = load(body)
+// API call, symbol passed in
+get(`http://dev.markitondemand.com/MODApis/Api/v2/InteractiveChart/json?parameters=%7B%22Normalized%22%3Afalse%2C%22NumberOfDays%22%3A365%2C%22DataPeriod%22%3A%22Day%22%2C%22Elements%22%3A%5B%7B%22Symbol%22%3A%22${symbol}%22%2C%22Type%22%3A%22price%22%2C%22Params%22%3A%5B%22c%22%5D%7D%5D%7D`, (error, res, body) => {
+    
+  if (!error && res.statusCode == 200) {
+    let stockInfo = JSON.parse(body)                                  // parses data received from API
+    
+    let valuesArray = stockInfo.Elements[0].DataSeries.close.values   // assigns array from the closing values to variable
+    let sum = valuesArray.reduce((prev, curr) => prev + curr)         // reduce adds array values together...
+    let avg = (sum / valuesArray.length).toFixed(2)                   // ...to be averaged out here
 
-    const topStories = $('a.title')
-      .toArray()
-      .map($)                     // .map((el) => $(el))
-      .map(el => ({
-        title: el.text(),
-        link: el.attr('href')
-      }))
+    let crncyUsed = stockInfo.Elements[0].Currency
+    let highDate = stockInfo.Elements[0].DataSeries.close.maxDate.split("T")[0].split("-").reverse().join("-")
+    let highPrice = stockInfo.Elements[0].DataSeries.close.max
+    let lowDate = (stockInfo.Elements[0].DataSeries.close.minDate.split("T")[0]).split("-").reverse().join("-")
+    let lowPrice = stockInfo.Elements[0].DataSeries.close.min
 
-    res.end(JSON.stringify(topStories))
-  })
+    process.stdout.write(`Average price for (${symbol.toUpperCase()}): $${avg} ${crncyUsed}\n`)
+    process.stdout.write(`  With a high of $${highPrice} on ${highDate}\n    and a low of $${lowPrice} on ${lowDate}\n`)
+  }
 })
-
-server.listen(8080)
