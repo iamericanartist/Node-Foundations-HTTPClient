@@ -42,4 +42,4 @@ getJSON('http://example.com').then(data => { ... })
 ```
 
 ***
-[Original Exercise Link](https://github.com/nashville-software-school/node-milestones/blob/master/01-foundations/exercises/09-streaming-io.md)
+[Original Exercise Link](https://github.com/nashville-software-school/node-milestones/blob/master/01-foundations/exercises/11-http_client.md)
